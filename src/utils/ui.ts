@@ -1,5 +1,5 @@
-import type { SavedQuote, BusinessProfile } from '../types.ts';
-import { encodeShareableQuote, formatINR, formatINRCompact } from './quoteMath.ts';
+import type { SavedQuote, BusinessProfile, ComputedQuoteLine } from '../types.ts';
+import { decodeShareableQuote, formatINR, formatINRCompact, recomputeQuoteLines } from './quoteMath.ts';
 
 export const DAY_MS = 864e5;
 
@@ -79,8 +79,77 @@ export function base64ToBlobUrl(base64: string, mime: string): string {
   return URL.createObjectURL(new Blob([bytes], { type: mime }));
 }
 
-export function shareUrl(quote: SavedQuote): string {
-  return `${window.location.origin}${window.location.pathname}?quote=${encodeShareableQuote(quote)}`;
+/* ---------- short customer links ----------
+   Only what the customer needs is packed into the link, compressed with deflate,
+   and the totals are recalculated by the GST engine when the link is opened.
+   A 3-item quote goes from ~4,000 characters to ~500. */
+const toB64Url = (bytes: Uint8Array) => {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+const fromB64Url = (s: string) => {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+};
+async function pipeBytes(bytes: Uint8Array, stream: CompressionStream | DecompressionStream): Promise<Uint8Array> {
+  const res = new Response(new Blob([bytes as unknown as BlobPart]).stream().pipeThrough(stream));
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+export async function encodeShortQuote(q: SavedQuote): Promise<string> {
+  const b = q.businessSnapshot;
+  const compact = {
+    n: q.quoteNumber, c: q.createdAt, u: q.validUntil,
+    b: [b.businessName, b.gstin, b.phone, b.address, b.upiId ?? '', b.termsNote ?? '', b.advancePercent ?? 50],
+    k: [q.customerName, q.customerPhone, q.customerLocation],
+    p: q.placeOfSupply, s: q.supplyType === 'inter' ? 1 : 0, d: q.discountPercent,
+    l: q.lines.map((l) => [l.name, l.unit, l.unitPrice, l.gstPercent, l.hsnSac ?? '', l.quantity, l.dimensionsNote]),
+  };
+  const json = new TextEncoder().encode(JSON.stringify(compact));
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      return 'z' + toB64Url(await pipeBytes(json, new CompressionStream('deflate-raw')));
+    } catch { /* fall through */ }
+  }
+  return 'j' + toB64Url(json);
+}
+
+export async function decodeShortQuote(encoded: string): Promise<SavedQuote | null> {
+  try {
+    let bytes: Uint8Array;
+    if (encoded[0] === 'z') bytes = await pipeBytes(fromB64Url(encoded.slice(1)), new DecompressionStream('deflate-raw'));
+    else if (encoded[0] === 'j') bytes = fromB64Url(encoded.slice(1));
+    else return decodeShareableQuote(encoded); // links made before v2.1
+    const c = JSON.parse(new TextDecoder().decode(bytes));
+    const supply = c.s ? 'inter' : 'intra';
+    const raw: ComputedQuoteLine[] = c.l.map((l: [string, string, number, number, string, number, string], i: number) => ({
+      id: `l${i}`, catalogItemId: '', name: l[0], unit: l[1], unitPrice: l[2], gstPercent: l[3], hsnSac: l[4],
+      quantity: l[5], dimensionsNote: l[6] ?? '', confidence: 'high',
+      taxableAmount: 0, discountAmount: 0, discountedTaxable: 0, cgstAmount: 0, sgstAmount: 0, igstAmount: 0, lineTotal: 0,
+    }));
+    const { lines, totals } = recomputeQuoteLines(raw, c.d, supply);
+    return {
+      id: c.n, quoteNumber: c.n, createdAt: c.c, validUntil: c.u, status: 'Sent',
+      businessSnapshot: {
+        businessName: c.b[0], gstin: c.b[1], phone: c.b[2], address: c.b[3], presetKey: '',
+        upiId: c.b[4] || undefined, termsNote: c.b[5] || undefined, advancePercent: c.b[6],
+      },
+      customerName: c.k[0], customerPhone: c.k[1], customerLocation: c.k[2],
+      placeOfSupply: c.p, supplyType: supply, detectedLanguage: '', inquiryText: '', attachmentTranscript: '',
+      hasImage: false, hasAudio: false, lines, discountPercent: c.d, totals,
+      missingInfoFlags: [], unmatchedItems: [], confidenceScore: 1, overallSummary: '',
+      whatsappFollowUpEn: '', whatsappFollowUpHinglish: '', activeTone: 'english', processingTimeMs: 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function shareUrl(quote: SavedQuote): Promise<string> {
+  return `${window.location.origin}${window.location.pathname}?q=${await encodeShortQuote(quote)}`;
 }
 
 export function advanceOf(quote: SavedQuote): { pct: number; amount: number } {

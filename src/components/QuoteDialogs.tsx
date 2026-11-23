@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { SavedQuote } from '../types.ts';
 import { formatINR, formatINRInWords } from '../utils/quoteMath.ts';
@@ -158,11 +158,23 @@ export function DocDialog({ quote, onClose, onSend }: { quote: SavedQuote; onClo
 export function SendDialog({ quote, onClose, onSent }: { quote: SavedQuote; onClose: () => void; onSent: (q: SavedQuote) => void }) {
   const toast = useToast();
   const [tone, setTone] = useState<'english' | 'hinglish'>(quote.activeTone ?? 'english');
-  const link = useMemo(() => shareUrl(quote), [quote]);
-  const [text, setText] = useState(() => quoteMessage(quote, tone, link));
+  const [link, setLink] = useState('');
+  const [text, setText] = useState('');
+  useEffect(() => {
+    let alive = true;
+    shareUrl(quote).then((l) => {
+      if (!alive) return;
+      setLink(l);
+      setText(quoteMessage(quote, tone, l));
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quote.id]);
   const switchTone = (t: 'english' | 'hinglish') => {
     setTone(t);
-    setText(quoteMessage(quote, t, link));
+    if (link) setText(quoteMessage(quote, t, link));
   };
   const hasPhone = quote.customerPhone.replace(/\D/g, '').length >= 10;
   const markSent = () => {
@@ -214,7 +226,11 @@ export function SendDialog({ quote, onClose, onSent }: { quote: SavedQuote; onCl
 
 export function ReminderDialog({ quote, onClose }: { quote: SavedQuote; onClose: () => void }) {
   const toast = useToast();
-  const [text, setText] = useState(() => reminderMessage(quote, shareUrl(quote)));
+  const [text, setText] = useState('');
+  useEffect(() => {
+    shareUrl(quote).then((l) => setText(reminderMessage(quote, l)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quote.id]);
   return (
     <Dialog
       title="Send a friendly reminder"

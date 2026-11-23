@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PRESET_BUSINESSES } from './data/presets.ts';
 import type { BusinessProfile, QuoteStatus, SavedQuote } from './types.ts';
-import { decodeShareableQuote } from './utils/quoteMath.ts';
-import { shareUrl } from './utils/ui.ts';
+import { decodeShortQuote, shareUrl } from './utils/ui.ts';
 import { Icon, Logo } from './components/Icon.tsx';
 import { ToastProvider, copyText, useToast } from './components/Dialog.tsx';
 import { Landing } from './components/Landing.tsx';
@@ -43,9 +42,9 @@ const readRoute = (): Route => {
   const h = window.location.hash.slice(1);
   return (APP_ROUTES as string[]).includes(h) ? (h as Route) : 'home';
 };
-const sharedQuoteFromUrl = () => {
-  const encoded = new URLSearchParams(window.location.search).get('quote');
-  return encoded ? decodeShareableQuote(encoded) : null;
+const sharedParam = () => {
+  const p = new URLSearchParams(window.location.search);
+  return p.get('q') ?? p.get('quote');
 };
 
 export default function App() {
@@ -58,7 +57,12 @@ export default function App() {
 
 function Shell() {
   const toast = useToast();
-  const [shared] = useState<SavedQuote | null>(sharedQuoteFromUrl);
+  const [sharedCode] = useState<string | null>(sharedParam);
+  const [shared, setShared] = useState<SavedQuote | null | 'loading' | 'bad'>(sharedCode ? 'loading' : null);
+  useEffect(() => {
+    if (!sharedCode) return;
+    decodeShortQuote(sharedCode).then((q) => setShared(q ?? 'bad'));
+  }, [sharedCode]);
   const [route, setRoute] = useState<Route>(readRoute);
   const [businesses, setBusinesses] = useState<BusinessProfile[]>(() => {
     const stored = load<BusinessProfile[]>(KEYS.businesses, []);
@@ -113,7 +117,7 @@ function Shell() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   useEffect(() => {
-    document.title = shared ? `Quotation ${shared.quoteNumber}` : TITLES[route];
+    document.title = shared && typeof shared === 'object' ? `Quotation ${shared.quoteNumber}` : TITLES[route];
   }, [route, shared]);
 
   const business = businesses.find((b) => b.id === activeId) ?? businesses[0];
@@ -131,8 +135,19 @@ function Shell() {
 
   const upsertQuote = (q: SavedQuote) => setQuotes((prev) => (prev.some((x) => x.id === q.id) ? prev.map((x) => (x.id === q.id ? q : x)) : [q, ...prev]));
   const quoteById = (id: string) => quotes.find((q) => q.id === id);
-  const copyLink = async (q: SavedQuote) => toast((await copyText(shareUrl(q))) ? 'Customer link copied' : 'Copy failed. Open the PDF instead.');
+  const copyLink = async (q: SavedQuote) => toast((await copyText(await shareUrl(q))) ? 'Customer link copied' : 'Copy failed. Open the PDF instead.');
 
+  if (shared === 'loading') {
+    return <div className="empty" role="status" style={{ minHeight: '60vh' }}><p>Opening your quotation…</p></div>;
+  }
+  if (shared === 'bad') {
+    return (
+      <div className="empty" role="alert" style={{ minHeight: '60vh' }}>
+        <h1 style={{ fontSize: 26 }}>This quote link is incomplete</h1>
+        <p>Part of the link may be missing. Ask the business to send it again on WhatsApp.</p>
+      </div>
+    );
+  }
   if (shared) {
     return (
       <>

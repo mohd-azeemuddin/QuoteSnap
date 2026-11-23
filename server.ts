@@ -213,7 +213,7 @@ async function generateWithRetry(
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: process.env.GEMINI_MODEL || 'gemini-4-hydrogen',
         contents: { parts },
         config: {
           systemInstruction,
@@ -226,7 +226,9 @@ async function generateWithRetry(
     } catch (err) {
       lastError = err;
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('API_KEY_INVALID') || msg.includes('PERMISSION_DENIED') || msg.includes('400')) {
+      console.error(`[gemini] attempt ${attempt + 1} failed:`, msg.slice(0, 300));
+      // Don't retry errors that won't fix themselves (bad key, no access, bad request, quota used up).
+      if (/API_KEY_INVALID|PERMISSION_DENIED|400|404|NOT_FOUND|RESOURCE_EXHAUSTED|quota/i.test(msg)) {
         throw err;
       }
       await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
@@ -269,7 +271,7 @@ async function startServer() {
       const sample = SAMPLE_VOICE_SCRIPTS[presetKey];
       const ai = getAiClient();
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash-lite-tts',
+        model: process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-lite-tts',
         contents: [
           {
             role: 'user',
