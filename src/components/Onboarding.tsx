@@ -113,6 +113,9 @@ export function Onboarding({
       )}
       {step === 2 && (
         <div className="form-grid">
+          {pick !== 'blank' && (
+            <p className="hint full" style={{ margin: '-4px 0 4px' }}>Example details are filled in so you can try it now. Replace them with yours any time.</p>
+          )}
           <div className="field full">
             <label htmlFor="o-name">Business name</label>
             <input

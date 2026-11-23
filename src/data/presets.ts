@@ -98,17 +98,17 @@ export const PRESET_BUSINESSES: BusinessProfile[] = [
     sampleInquiries: [
       {
         id: 'int-sample-1',
-        label: 'Whitefield 2BHK Hinglish WhatsApp',
+        label: '2BHK in Whitefield',
         text: 'Bhaiya 2BHK whitefield mein wardrobe chahiye 8x7 ft laminate, plus kitchen loft approx 25 sqft, aur false ceiling hall ka 180 sqft. Urgent quote bhejo GST ke sath - Ramesh',
       },
       {
         id: 'int-sample-2',
-        label: 'HSR Villa Wardrobe + Painting',
+        label: 'Flat in HSR Layout',
         text: 'Hi team, looking for interiors at Prestige Lakeside HSR. Master bedroom acrylic wardrobe 9ft width (height standard), living room TV unit 40 sqft, and full flat tractor emulsion painting around 1400 sqft. Call me at 9900123456 - Ananya.',
       },
       {
         id: 'int-sample-3',
-        label: 'Ambiguous Site Inquiry (Missing Dims)',
+        label: 'Sizes missing',
         text: 'Sir Sarjapur flat mein ek bedroom wardrobe banana hai laminate wala aur hall mein false ceiling + 8 LED light points lagane hai. Kitchen loft bhi chahiye. Kitna padega?',
       },
     ],
@@ -192,17 +192,17 @@ export const PRESET_BUSINESSES: BusinessProfile[] = [
     sampleInquiries: [
       {
         id: 'prt-sample-1',
-        label: 'Cafe Opening Signage Hinglish',
+        label: 'New cafe signage',
         text: 'Boss Koramangala 5th block mein new cafe open kar rahe hai. 10x3 ft backlit vinyl glow board chahiye, 4 roll-up standees, 1000 matte visiting cards, aur 500 tri-fold brochures. Tomorrow delivery possible? - Vikram, BrewHaus',
       },
       {
         id: 'prt-sample-2',
-        label: 'Tech Park Event Print Run',
+        label: 'Event stall prints',
         text: 'Need print quote for Manyata Tech Park stall: 2 flex banners 8x4 ft each, 60 sqft sunboard mounting, and 300 glossy flyers. Please send tax invoice estimate to Priya.',
       },
       {
         id: 'prt-sample-3',
-        label: 'Clinic Board + Cards (Missing Size)',
+        label: 'Clinic board, size missing',
         text: 'Hello, dental clinic Indiranagar ke liye 3D acrylic LED letters board chahiye aur visiting cards 500 pcs. Rate bhejo please - Dr. Nair',
       },
     ],
@@ -286,17 +286,17 @@ export const PRESET_BUSINESSES: BusinessProfile[] = [
     sampleInquiries: [
       {
         id: 'cat-sample-1',
-        label: 'Bellandur Office Townhall Hinglish',
+        label: 'Office townhall, 85 people',
         text: 'Hi, Friday ko Bellandur Ecospace office mein townhall hai 85 log ke liye. 55 plates North Indian veg buffet aur 30 non-veg buffet chahiye. Shaam ko 90 snack boxes aur 5 masala chai flasks bhi bhej dena. GST quote share karo - Sneha',
       },
       {
         id: 'cat-sample-2',
-        label: 'Startup Demo Day Catering',
+        label: 'Demo day, 120 guests',
         text: 'Need catering estimate for 120 guests in Koramangala: South Indian Veg Buffet + 1 Live Dosa counter + 3 service staff. Event is next Wednesday.',
       },
       {
         id: 'cat-sample-3',
-        label: 'Workshop Hi-Tea Inquiry (Missing Count)',
+        label: 'Workshop, count unclear',
         text: 'Sir MG Road office mein 2-day workshop hai. Morning chai flasks aur evening snack boxes chahiye approx 40-50 people ke liye. Lunch option bhi batana.',
       },
     ],

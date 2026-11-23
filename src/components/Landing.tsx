@@ -117,7 +117,7 @@ function SnapDemo() {
   );
 }
 
-export function Landing({ onStart, onTry }: { onStart: () => void; onTry: (businessId: string) => void }) {
+export function Landing({ onStart, onTry, themeButton }: { onStart: () => void; onTry: (businessId: string) => void; themeButton?: import('react').ReactNode }) {
   return (
     <div>
       <div className="wrap">
@@ -132,9 +132,12 @@ export function Landing({ onStart, onTry }: { onStart: () => void; onTry: (busin
             <a href="#trades">Trades</a>
             <a href="#faq">FAQ</a>
           </nav>
-          <a className="btn btn-ink" href="#new-quote">
-            Open app
-          </a>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {themeButton}
+            <a className="btn btn-ink" href="#new-quote">
+              Open app
+            </a>
+          </div>
         </header>
       </div>
 

@@ -23,7 +23,7 @@ const STEPS_BY_MODE: Record<Mode, string> = {
 
 export function checklistOf(q: SavedQuote) {
   return [
-    ...q.missingInfoFlags.map((t) => ({ key: `f:${t}`, text: t, hint: 'Confirm with the customer, or adjust the quote.', addLink: false })),
+    ...q.missingInfoFlags.map((t) => ({ key: `f:${t}`, text: t, hint: '', addLink: false })),
     ...q.unmatchedItems.map((t) => ({ key: `u:${t}`, text: `“${t}” isn't on your rate card.`, hint: 'Add it to your rate card, or leave it out.', addLink: true })),
   ];
 }
@@ -329,6 +329,7 @@ export function NewQuote({
     });
     const q: SavedQuote = {
       ...built,
+      customerName: built.customerName === 'Walk-in Customer' ? '' : built.customerName,
       businessSnapshot: { ...built.businessSnapshot, ...snapshotExtras(business) },
       checkedFlags: [],
       isDemo,
@@ -588,7 +589,7 @@ export function NewQuote({
                         <input type="checkbox" checked={on} onChange={(e) => toggleCheck(c.key, e.target.checked)} />
                         <span className="t">
                           {c.text}
-                          <small>{c.hint}</small>
+                          {c.hint && <small>{c.hint}</small>}
                         </span>
                         {c.addLink ? (
                           <button type="button" className="btn btn-sm" onClick={onGoRateCard}>Add</button>
@@ -611,10 +612,27 @@ export function NewQuote({
 
         {/* ---------- quote ---------- */}
         <section className="card" aria-labelledby="quote-title">
-          {!quote ? (
+          {busy ? (
+            <div className="card-b skeleton" aria-hidden="true">
+              <div className="sk sk-title" />
+              <div className="sk sk-line" style={{ width: '40%' }} />
+              <div className="sk-rows">
+                {[0, 1, 2].map((i) => (
+                  <div className="sk-row" key={i}>
+                    <div className="sk sk-line" style={{ width: `${60 - i * 10}%` }} />
+                    <div className="sk sk-pill" />
+                  </div>
+                ))}
+              </div>
+              <div className="sk sk-total" />
+            </div>
+          ) : !quote ? (
             <div className="empty">
+              <div className="empty-art" aria-hidden="true">
+                <span /><span /><span />
+              </div>
               <h2 id="quote-title">Your quote appears here</h2>
-              <p>Paste an inquiry or pick a sample, then press Make quote.</p>
+              <p>Paste the customer's message or tap a sample, then press <b>Make quote</b>.</p>
             </div>
           ) : (
             <div className="card-b">
@@ -678,7 +696,7 @@ export function NewQuote({
                       <div className="qty-unit">{l.unit}</div>
                     </div>
                     <div role="cell" className="rate num">{formatINRCompact(l.unitPrice)}</div>
-                    <div role="cell" className="amt num">{formatINR(l.discountedTaxable)}</div>
+                    <div role="cell" className="amt num">{formatINRCompact(l.discountedTaxable)}</div>
                     <div role="cell">
                       <button type="button" className="icon-btn" aria-label={`Remove ${shortName(l.name)}`} onClick={() => removeLine(l.id)}>
                         <Icon name="x" />
@@ -716,19 +734,21 @@ export function NewQuote({
                   )}
                 </div>
                 <div className="totals" aria-live="polite" aria-atomic="true">
-                  <div className="r"><span>Subtotal</span><span className="num">{formatINR(quote.totals.grossSubtotal)}</span></div>
+                  <div className="r"><span>Subtotal</span><span className="num">{formatINRCompact(quote.totals.grossSubtotal)}</span></div>
                   {quote.totals.discountAmount > 0 && (
-                    <div className="r"><span>Discount ({quote.discountPercent}%)</span><span className="num">− {formatINR(quote.totals.discountAmount)}</span></div>
+                    <div className="r"><span>Discount ({quote.discountPercent}%)</span><span className="num">− {formatINRCompact(quote.totals.discountAmount)}</span></div>
                   )}
                   {quote.supplyType === 'inter' ? (
-                    <div className="r"><span>IGST</span><span className="num">{formatINR(quote.totals.totalIgst)}</span></div>
+                    <div className="r"><span>IGST</span><span className="num">{formatINRCompact(quote.totals.totalIgst)}</span></div>
                   ) : (
                     <>
-                      <div className="r"><span>CGST</span><span className="num">{formatINR(quote.totals.totalCgst)}</span></div>
-                      <div className="r"><span>SGST</span><span className="num">{formatINR(quote.totals.totalSgst)}</span></div>
+                      <div className="r"><span>CGST</span><span className="num">{formatINRCompact(quote.totals.totalCgst)}</span></div>
+                      <div className="r"><span>SGST</span><span className="num">{formatINRCompact(quote.totals.totalSgst)}</span></div>
                     </>
                   )}
-                  <div className="r"><span>Round off</span><span className="num">{formatINR(quote.totals.roundOff)}</span></div>
+                  {quote.totals.roundOff !== 0 && (
+                    <div className="r"><span>Round off</span><span className="num">{formatINR(quote.totals.roundOff)}</span></div>
+                  )}
                   <div className="r grand"><span>Total</span><span className="num">{formatINR(quote.totals.grandTotal, false)}</span></div>
                   <div className="words">{formatINRInWords(quote.totals.grandTotal)}</div>
                 </div>

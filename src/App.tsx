@@ -77,7 +77,13 @@ function Shell() {
     | null
   >(null);
   const [autoSample, setAutoSample] = useState<string | null>(null);
+  const [session, setSession] = useState(0); // bump to give 'New quote' a clean screen
+  const keepQuote = useRef(false); // true when we navigate to open an existing quote
   const mainRef = useRef<HTMLElement>(null);
+  const freshQuote = () => {
+    setCurrentId(null);
+    setSession((s) => s + 1);
+  };
 
   useEffect(() => save(KEYS.businesses, businesses), [businesses]);
   useEffect(() => save(KEYS.active, activeId), [activeId]);
@@ -93,6 +99,8 @@ function Shell() {
     const onHash = () => {
       const r = readRoute();
       setRoute(r);
+      if (r === 'new-quote' && !keepQuote.current) freshQuote();
+      keepQuote.current = false;
       const h = window.location.hash.slice(1);
       if (r === 'home' && h && document.getElementById(h)) {
         document.getElementById(h)!.scrollIntoView();
@@ -115,7 +123,8 @@ function Shell() {
   );
   const myQuotes = useMemo(() => quotes.filter(belongs), [quotes, belongs]);
   const current = quotes.find((q) => q.id === currentId && belongs(q)) ?? null;
-  const go = (r: Route) => {
+  const go = (r: Route, keep = false) => {
+    keepQuote.current = keep;
     if (window.location.hash !== `#${r}`) window.location.hash = r;
     else setRoute(r);
   };
@@ -139,7 +148,7 @@ function Shell() {
     setActiveId(id);
     setCurrentId(null);
     setAutoSample(b?.sampleInquiries[0]?.id ?? null);
-    go('new-quote');
+    go('new-quote', true);
   };
 
   const navItems: Array<{ r: Route; label: string; short: string; icon: 'plus' | 'doc' | 'grid' | 'phone' }> = [
@@ -169,8 +178,7 @@ function Shell() {
 
       {route === 'home' ? (
         <>
-          <Landing onStart={() => startOnboarding()} onTry={tryBusiness} />
-          <div style={{ position: 'fixed', right: 16, bottom: 16 }}>{themeBtn}</div>
+          <Landing onStart={() => startOnboarding()} onTry={tryBusiness} themeButton={themeBtn} />
         </>
       ) : (
         <>
@@ -178,6 +186,7 @@ function Shell() {
             <div className="row">
               <a className="brand" href="#home" aria-label="QuoteSnap home page">
                 <Logo />
+                <span className="wordmark" aria-hidden="true">QuoteSnap</span>
               </a>
               <div className="biz-select">
                 <span className="logo" aria-hidden="true">{(business.businessName || 'Q')[0]}</span>
@@ -193,13 +202,13 @@ function Shell() {
                   }}
                 >
                   {businesses.map((b) => (
-                    <option key={b.id} value={b.id}>{b.presetName}</option>
+                    <option key={b.id} value={b.id}>{b.businessName || b.presetName}</option>
                   ))}
                 </select>
               </div>
               <nav className="app-nav" aria-label="Main">
                 {navItems.map((n) => (
-                  <a key={n.r} href={`#${n.r}`} aria-current={route === n.r ? 'page' : undefined}>
+                  <a key={n.r} href={`#${n.r}`} aria-current={route === n.r ? 'page' : undefined} onClick={() => n.r === 'new-quote' && route === 'new-quote' && freshQuote()}>
                     <Icon name={n.icon} />
                     {n.label}
                   </a>
@@ -212,6 +221,7 @@ function Shell() {
           <main id="main" ref={mainRef} tabIndex={-1} className="app-main" style={{ outline: 'none' }}>
             {route === 'new-quote' && (
               <NewQuote
+                key={`${business.id}-${session}`}
                 business={business}
                 quote={current}
                 quoteCount={quotes.length}
@@ -235,7 +245,7 @@ function Shell() {
                 businessName={business.businessName}
                 onOpen={(q) => {
                   setCurrentId(q.id);
-                  go('new-quote');
+                  go('new-quote', true);
                 }}
                 onStatus={(q, s: QuoteStatus) => {
                   upsertQuote({ ...q, status: s, sentAt: s === 'Sent' ? new Date().toISOString() : q.sentAt });
@@ -255,7 +265,7 @@ function Shell() {
             )}
             {route === 'customer-view' &&
               (current ?? myQuotes[0] ? (
-                <CustomerView quote={(current ?? myQuotes[0])!} preview onExit={() => go('new-quote')} />
+                <CustomerView quote={(current ?? myQuotes[0])!} preview onExit={() => go('new-quote', true)} />
               ) : (
                 <div className="card empty">
                   <h1 style={{ fontSize: 28 }}>Make a quote first</h1>
@@ -267,7 +277,7 @@ function Shell() {
 
           <nav className="bottom-nav" aria-label="Main">
             {navItems.map((n) => (
-              <a key={n.r} href={`#${n.r}`} aria-current={route === n.r ? 'page' : undefined}>
+              <a key={n.r} href={`#${n.r}`} aria-current={route === n.r ? 'page' : undefined} onClick={() => n.r === 'new-quote' && route === 'new-quote' && freshQuote()}>
                 <Icon name={n.icon} />
                 {n.short}
               </a>
@@ -295,7 +305,7 @@ function Shell() {
             setDialog(null);
             if (makeSample) {
               setAutoSample(b.sampleInquiries[0].id);
-              go('new-quote');
+              go('new-quote', true);
             } else go('rate-card');
           }}
         />
