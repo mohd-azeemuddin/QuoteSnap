@@ -12,6 +12,14 @@ export function fmtShort(iso: string | number): string {
 export const rupees = (n: number) => formatINR(n, false);
 export const shortName = (name: string) => name.split('(')[0].trim();
 export const firstName = (name: string) => (name || '').split(/[\s(]/)[0];
+/** "55 plate" -> "55 plates", "90 box" -> "90 boxes"; measures like "sq ft" stay as they are. */
+export function qtyWithUnit(qty: number, unit: string): string {
+  const u = unit.trim();
+  if (qty === 1 || /sq|ft|kg|mtr|m$|cm|l$|ltr|%/i.test(u) || /s$/i.test(u)) return `${qty} ${u}`;
+  if (/(x|ch|sh)$/i.test(u)) return `${qty} ${u}es`;
+  if (/inch$/i.test(u)) return `${qty} inches`;
+  return `${qty} ${u}s`;
+}
 
 export const STATE_CODES: Record<string, string> = {
   '01': 'Jammu & Kashmir', '02': 'Himachal Pradesh', '03': 'Punjab', '04': 'Chandigarh', '05': 'Uttarakhand',
@@ -181,7 +189,7 @@ export function waLink(phone: string, text: string): string {
 export function quoteMessage(quote: SavedQuote, tone: 'english' | 'hinglish', link: string): string {
   const opener = (tone === 'hinglish' ? quote.whatsappFollowUpHinglish : quote.whatsappFollowUpEn).trim();
   const items = quote.lines
-    .map((l) => `• ${shortName(l.name)}: ${l.quantity} ${l.unit}, ${formatINRCompact(l.lineTotal)}`)
+    .map((l) => `• ${shortName(l.name)}: ${qtyWithUnit(l.quantity, l.unit)}, ${formatINRCompact(l.lineTotal)}`)
     .join('\n');
   const valid = fmtShort(quote.validUntil);
   const total = rupees(quote.totals.grandTotal);
