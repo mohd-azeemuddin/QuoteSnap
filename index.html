@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>QuoteSnap AI: WhatsApp inquiry to GST quote in 30 seconds</title>
+    <meta name="description" content="Turn WhatsApp messages, voice notes and photos of site notes into accurate Indian GST quotations in seconds. Built for Indian small businesses." />
+    <meta name="theme-color" content="#14203a" />
+    <meta property="og:title" content="QuoteSnap AI: WhatsApp inquiry to GST quote in 30 seconds" />
+    <meta property="og:description" content="Paste a message, snap a site note or forward a voice note. QuoteSnap prices it from your rate card, gets the GST right, and writes the WhatsApp reply." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='7' fill='%2314203a'/%3E%3Cpath d='M19 3h3a7 7 0 0 1 7 7v3z' fill='%23e3820b'/%3E%3Cpath d='M10 12h9M10 16h12M10 20h7' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@500;600;700&family=Hind:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      // Apply the saved or system theme before first paint (no flash).
+      (function () {
+        try {
+          var t = JSON.parse(localStorage.getItem('qs2_theme') || 'null');
+          if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>QuoteSnap needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
