@@ -196,10 +196,17 @@ export function SendDialog({ quote, onClose, onSent }: { quote: SavedQuote; onCl
             <Icon name="copy" />
             Copy message
           </button>
-          <a className="btn btn-wa" href={waLink(quote.customerPhone, text)} target="_blank" rel="noopener noreferrer" onClick={markSent}>
-            <Icon name="wa" />
-            Open WhatsApp
-          </a>
+          {text ? (
+            <a className="btn btn-wa" href={waLink(quote.customerPhone, text)} target="_blank" rel="noopener noreferrer" onClick={markSent}>
+              <Icon name="wa" />
+              Open WhatsApp
+            </a>
+          ) : (
+            <button type="button" className="btn btn-wa" disabled>
+              <Icon name="loader" className="icon spin" />
+              Preparing link…
+            </button>
+          )}
         </>
       }
     >
@@ -216,7 +223,7 @@ export function SendDialog({ quote, onClose, onSent }: { quote: SavedQuote; onCl
         </div>
         <div className="wa-preview">
           <label htmlFor="wa-text" className="sr-only">Message to send</label>
-          <textarea id="wa-text" value={text} onChange={(e) => setText(e.target.value)} />
+          <textarea id="wa-text" value={text} placeholder="Preparing your message and a short link…" aria-busy={!text} onChange={(e) => setText(e.target.value)} />
         </div>
         <p className="hint">The link opens the quote in any phone browser, where your customer can approve it and pay the advance.</p>
       </div>

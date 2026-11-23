@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { extractWithClaude } from './claude.ts';
+import { isOwnQuoteLink, shortenUrl } from './shorten.ts';
 
 dotenv.config();
 
@@ -316,6 +317,34 @@ async function startServer() {
       console.error('[/api/sample-voice] Error:', message);
       res.status(500).json({ error: message });
     }
+  });
+
+  // Short links for WhatsApp, cached in memory so repeated sends reuse the same short URL.
+  const shortCache = new Map<string, string>();
+  app.post('/api/shorten', async (req, res) => {
+    const ip = req.ip || 'unknown';
+    if (!checkRateLimit(ip, 'shorten', 30, 60_000)) {
+      res.status(429).json({ error: 'Too many requests.' });
+      return;
+    }
+    const url = String(req.body?.url ?? '');
+    if (url.length > 6000 || !isOwnQuoteLink(url, req.get('host') ?? '')) {
+      res.status(400).json({ error: 'Only QuoteSnap quote links can be shortened.' });
+      return;
+    }
+    const cached = shortCache.get(url);
+    if (cached) {
+      res.json({ shortUrl: cached });
+      return;
+    }
+    const short = await shortenUrl(url);
+    if (!short) {
+      res.status(502).json({ error: 'Link shortener unavailable.' });
+      return;
+    }
+    if (shortCache.size > 2000) shortCache.clear();
+    shortCache.set(url, short);
+    res.json({ shortUrl: short });
   });
 
   app.post('/api/extract-quote', async (req, res) => {

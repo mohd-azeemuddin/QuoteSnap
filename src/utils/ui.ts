@@ -156,8 +156,35 @@ export async function decodeShortQuote(encoded: string): Promise<SavedQuote | nu
   }
 }
 
+export function longShareUrl(code: string): string {
+  return `${window.location.origin}${window.location.pathname}?q=${code}`;
+}
+
+const shortened = new Map<string, string>();
+/** Customer link for WhatsApp: a short is.gd/TinyURL link when available, otherwise the full link. */
 export async function shareUrl(quote: SavedQuote): Promise<string> {
-  return `${window.location.origin}${window.location.pathname}?q=${await encodeShortQuote(quote)}`;
+  const long = longShareUrl(await encodeShortQuote(quote));
+  const hit = shortened.get(long);
+  if (hit) return hit;
+  try {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 6000);
+    const resp = await fetch('/api/shorten', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: long }),
+      signal: controller.signal,
+    });
+    window.clearTimeout(timer);
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok && typeof data.shortUrl === 'string') {
+      shortened.set(long, data.shortUrl);
+      return data.shortUrl;
+    }
+  } catch {
+    /* offline or shortener down: use the full link */
+  }
+  return long;
 }
 
 export function advanceOf(quote: SavedQuote): { pct: number; amount: number } {
