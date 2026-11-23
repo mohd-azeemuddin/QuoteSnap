@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
+import { extractWithClaude } from './claude.ts';
 
 dotenv.config();
 
@@ -237,6 +238,8 @@ async function generateWithRetry(
   throw lastError;
 }
 
+
+
 async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
@@ -360,8 +363,6 @@ async function startServer() {
         return;
       }
 
-      const ai = getAiClient();
-
       const catalogContext = catalogItems.map((item) => ({
         catalogItemId: item.id,
         name: item.name,
@@ -416,13 +417,22 @@ CRITICAL RULES:
         });
       }
 
-      const response = await generateWithRetry(ai, parts, systemInstruction);
-      const rawJson = (response.text ?? '{}').trim();
-      const parsed = JSON.parse(rawJson);
+      // Claude handles text and photos when its key is set; voice notes need Gemini (audio input).
+      const useClaude = Boolean(process.env.ANTHROPIC_API_KEY) && !audio?.data && process.env.AI_PROVIDER !== 'gemini';
+      let parsed: unknown;
+      if (useClaude) {
+        parsed = await extractWithClaude(parts, systemInstruction, extractionResponseSchema);
+      } else {
+        const ai = getAiClient();
+        const response = await generateWithRetry(ai, parts, systemInstruction);
+        parsed = JSON.parse((response.text ?? '{}').trim());
+      }
+      console.log(`[extract-quote] ok via ${useClaude ? 'claude' : 'gemini'} in ${Date.now() - startTime} ms`);
 
       res.json({
         extraction: parsed,
         processingTimeMs: Date.now() - startTime,
+        provider: useClaude ? 'claude' : 'gemini',
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to process inquiry with Gemini.';

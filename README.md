@@ -39,7 +39,9 @@ The same inquiry always produces the same total. Lines the AI is unsure about ar
 
 ## Tech stack
 
-React 19 + TypeScript, plain CSS design system, Vite. Node 22 + Express, `@google/genai` (Gemini).
+React 19 + TypeScript, plain CSS design system, Vite. Node 22 + Express.
+
+**AI:** Claude Haiku 5.5 reads text and photo inquiries when `ANTHROPIC_API_KEY` is set (fast and low-cost). Gemini (`@google/genai`) reads voice notes, and handles everything if no Anthropic key is set.
 
 ## Run locally
 
@@ -58,7 +60,8 @@ NODE_ENV=production npm start
 2. **Build command:** `npm install && npm run build`
 3. **Start command:** `npm start`
 4. **Environment variables:**
-   - `GEMINI_API_KEY`: your key
+   - `ANTHROPIC_API_KEY`: your Claude API key (text and photo quotes)
+   - `GEMINI_API_KEY`: your Gemini key (voice notes)
    - `NODE_ENV`: `production`
 5. **Health check path:** `/api/health`
 
