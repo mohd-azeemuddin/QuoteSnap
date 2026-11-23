@@ -215,7 +215,16 @@ export function NewQuote({
     setMediaError(null);
     try {
       const resp = await fetch(`/api/sample-voice/${business.presetKey}`);
-      const payload = await resp.json();
+      const payload = await resp.json().catch(() => ({}));
+      if ((!resp.ok || !payload.data) && typeof payload.script === 'string') {
+        // Voice AI unavailable: use what the customer says as text instead.
+        setText(payload.script);
+        setDemoKey(null);
+        setMode('text');
+        setMediaError(null);
+        toast("Voice sample isn't available right now, so its words are in the text box");
+        return;
+      }
       if (!resp.ok || !payload.data) throw new Error(payload.error || 'unavailable');
       const mime = payload.mimeType || 'audio/wav';
       setAudio({ name: 'sample-voice-note', mimeType: mime, data: payload.data, previewUrl: base64ToBlobUrl(payload.data, mime) });
@@ -295,7 +304,21 @@ export function NewQuote({
         }),
       });
       const payload = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(payload.error || `The AI service returned an error (${resp.status}).`);
+      if (!resp.ok) {
+        const friendly =
+          resp.status === 429
+            ? aud
+              ? "The voice AI has reached its usage limit for now. Type the customer's message instead, or try again later."
+              : 'The AI service is busy or has reached its usage limit. Wait a minute and try again.'
+            : resp.status === 403
+              ? "The AI key on the server isn't working. Check the API keys in your hosting settings."
+              : resp.status === 413
+                ? 'That file is too large. Use a shorter voice note or a smaller photo.'
+                : resp.status === 400 && payload.error
+                  ? payload.error
+                  : "Couldn't make the quote right now. Try again in a moment.";
+        throw new Error(friendly);
+      }
       extraction = payload.extraction as AgentExtractionResult;
       processingTimeMs = Number(payload.processingTimeMs) || Math.round(performance.now() - started);
     } catch (err) {
@@ -308,9 +331,9 @@ export function NewQuote({
         window.clearTimeout(t2);
         setBusy(false);
         setError(
-          err instanceof Error && err.message && !/fetch|network/i.test(err.message)
+          err instanceof Error && err.message && !/fetch|network|load failed|json/i.test(err.message)
             ? err.message
-            : "Couldn't reach the AI service. Check your internet connection and try again."
+            : "Couldn't reach QuoteSnap. Check your internet connection and try again."
         );
         return;
       }

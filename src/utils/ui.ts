@@ -116,13 +116,8 @@ export async function encodeShortQuote(q: SavedQuote): Promise<string> {
     p: q.placeOfSupply, s: q.supplyType === 'inter' ? 1 : 0, d: q.discountPercent,
     l: q.lines.map((l) => [l.name, l.unit, l.unitPrice, l.gstPercent, l.hsnSac ?? '', l.quantity, l.dimensionsNote]),
   };
-  const json = new TextEncoder().encode(JSON.stringify(compact));
-  if (typeof CompressionStream !== 'undefined') {
-    try {
-      return 'z' + toB64Url(await pipeBytes(json, new CompressionStream('deflate-raw')));
-    } catch { /* fall through */ }
-  }
-  return 'j' + toB64Url(json);
+  // Plain (uncompressed) so links open on older phones too; the link is shortened anyway.
+  return 'j' + toB64Url(new TextEncoder().encode(JSON.stringify(compact)));
 }
 
 export async function decodeShortQuote(encoded: string): Promise<SavedQuote | null> {

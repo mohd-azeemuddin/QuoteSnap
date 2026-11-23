@@ -52,7 +52,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; border-radius: 6px; }
 .num { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .muted { color: var(--muted); }
 .hint { font-size: 14px; color: var(--muted); }
 .skip-link { position: absolute; left: 12px; top: -60px; z-index: 100; background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 10px; text-decoration: none; font-weight: 600; }
@@ -325,7 +325,7 @@ textarea.msg:focus, .input:focus { outline: 3px solid var(--saffron); outline-of
 .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--muted); }
 .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
 .toolbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin: 22px 0 12px; }
-.table-wrap { overflow-x: auto; }
+.table-wrap { overflow-x: auto; position: relative; }
 .qtable { width: 100%; border-collapse: collapse; font-size: 15px; }
 .qtable th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 600; padding: 10px 14px; background: var(--paper); border-bottom: 1px solid var(--line); }
 .qtable td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -337,6 +337,8 @@ textarea.msg:focus, .input:focus { outline: 3px solid var(--saffron); outline-of
 
 /* rate card */
 .rc-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+.rc-grid > * { min-width: 0; }
+.page-head > * { min-width: 0; }
 .rc-table input, .rc-table select { border: 1px solid transparent; background: transparent; border-radius: 8px; min-height: 40px; padding: 6px 8px; width: 100%; font-size: 15px; }
 .rc-table input:hover, .rc-table select:hover { border-color: var(--line); }
 .rc-table input:focus, .rc-table select:focus { border-color: var(--saffron); outline: none; background: var(--surface); }

@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { extractWithClaude } from './claude.ts';
 import { isOwnQuoteLink, shortenUrl } from './shorten.ts';
+import { toWavBase64 } from './audio.ts';
 
 dotenv.config();
 
@@ -299,14 +300,14 @@ async function startServer() {
         },
       });
 
-      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!base64Audio) {
+      const inline = response.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+      if (!inline?.data) {
         throw new Error('TTS model did not return audio data.');
       }
 
       const payload = {
         mimeType: 'audio/wav',
-        data: base64Audio,
+        data: toWavBase64(inline.data, inline.mimeType ?? ''),
         fileName: sample.fileName,
       };
       sampleVoiceCache.set(presetKey, payload);
@@ -315,7 +316,9 @@ async function startServer() {
       const message =
         error instanceof Error ? error.message : 'Failed to generate sample voice note.';
       console.error('[/api/sample-voice] Error:', message);
-      res.status(500).json({ error: message });
+      // Send the words of the sample so the app can still make the quote from text.
+      const key = req.params.presetKey in SAMPLE_VOICE_SCRIPTS ? req.params.presetKey : 'interiors';
+      res.status(503).json({ error: message, script: SAMPLE_VOICE_SCRIPTS[key].script });
     }
   });
 

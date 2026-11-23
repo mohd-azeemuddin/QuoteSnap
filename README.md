@@ -35,6 +35,7 @@ The same inquiry always produces the same total. Lines the AI is unsure about ar
   - Photos are shrunk in the browser before upload (about 4 MB down to about 300 KB).
   - The sample image is 134 KB, down from 848 KB.
   - Build files are cached long-term.
+- **Short WhatsApp links:** customer links are shortened (is.gd, TinyURL backup) and fall back to the full link if needed.
 - **Demo-safe:** if the AI service can't be reached, the built-in sample inquiries fall back to a saved example, clearly labelled. Prices and GST are still calculated live.
 
 ## Tech stack
